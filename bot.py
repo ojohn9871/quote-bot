@@ -4,8 +4,8 @@ import os
 from telegram import Bot
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-TOKEN = os.getenv("8833244191:AAFBOPdRr62EAhKcvfoI-9RWciP9a5EMgT4")  # store safely in environment
-CHAT_ID = os.getenv("-1003987687739")  # e.g. -1001234567890 or @groupname
+TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 
 bot = Bot(token=TOKEN)
 
