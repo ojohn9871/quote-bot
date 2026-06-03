@@ -1,6 +1,7 @@
 import json
 import random
 import os
+import asyncio
 from telegram import Bot
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -12,7 +13,9 @@ if not TOKEN:
 
 bot = Bot(token=TOKEN)
 
+# ----------------------------
 # Load quotes
+# ----------------------------
 def load_quotes():
     with open("quotes.json", "r", encoding="utf-8") as f:
         return json.load(f)
@@ -27,6 +30,9 @@ def save_used(used):
     with open("used.json", "w", encoding="utf-8") as f:
         json.dump(used, f)
 
+# ----------------------------
+# Quote logic
+# ----------------------------
 def get_quote():
     quotes = load_quotes()
     used = load_used()
@@ -43,38 +49,49 @@ def get_quote():
 
     return quote
 
+# ----------------------------
+# Async Telegram sender (FIX)
+# ----------------------------
+async def send_message(message: str):
+    await bot.send_message(
+        chat_id=CHAT_ID,
+        text=message,
+        parse_mode="Markdown"
+    )
+
 def send_quote():
     try:
         quote = get_quote()
         message = f"✨ *Daily Inspiration*\n\n{quote}"
 
-        bot.send_message(
-            chat_id=CHAT_ID,
-            text=message,
-            parse_mode="Markdown"
-        )
+        asyncio.run(send_message(message))
 
         print("Quote sent successfully")
 
     except Exception as e:
         print(f"ERROR: {e}")
 
-# Scheduler (1 quote every hour)
+# ----------------------------
+# Scheduler
+# ----------------------------
 scheduler = BlockingScheduler()
 scheduler.add_job(send_quote, "interval", hours=1)
 
 print("Bot is running...")
 
-# Send immediately on startup
+# ----------------------------
+# Startup message
+# ----------------------------
 try:
-    bot.send_message(
-        chat_id=CHAT_ID,
-        text="🚀 Quote Bot is ONLINE and running (1 quote every hour)."
+    asyncio.run(
+        send_message("🚀 Quote Bot is ONLINE and running (1 quote every hour).")
     )
     print("Startup message sent")
 except Exception as e:
     print(f"Startup error: {e}")
 
-send_quote()  # first quote immediately
+# First immediate quote
+send_quote()
 
+# Start scheduler
 scheduler.start()
