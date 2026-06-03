@@ -1,7 +1,6 @@
 import json
 import random
 import os
-import asyncio
 from telegram import Bot
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -21,7 +20,6 @@ def load_quotes():
 def load_used():
     if not os.path.exists("used.json"):
         return []
-
     with open("used.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -45,46 +43,38 @@ def get_quote():
 
     return quote
 
-async def send_message_async(message):
-    await bot.send_message(
-        chat_id=CHAT_ID,
-        text=message,
-        parse_mode="Markdown"
-    )
-
 def send_quote():
     try:
         quote = get_quote()
-
         message = f"✨ *Daily Inspiration*\n\n{quote}"
 
-        asyncio.run(send_message_async(message))
+        bot.send_message(
+            chat_id=CHAT_ID,
+            text=message,
+            parse_mode="Markdown"
+        )
 
         print("Quote sent successfully")
 
     except Exception as e:
         print(f"ERROR: {e}")
 
-# Scheduler
+# Scheduler (1 quote every hour)
 scheduler = BlockingScheduler()
-
-# 4 times daily
-scheduler.add_job(send_quote, "cron", hour=6, minute=0)
-scheduler.add_job(send_quote, "cron", hour=12, minute=0)
-scheduler.add_job(send_quote, "cron", hour=18, minute=0)
-scheduler.add_job(send_quote, "cron", hour=22, minute=0)
+scheduler.add_job(send_quote, "interval", hours=1)
 
 print("Bot is running...")
 
-# SEND TEST MESSAGE IMMEDIATELY AFTER DEPLOYMENT
+# Send immediately on startup
 try:
-    asyncio.run(
-        send_message_async(
-            "🚀 Quote Bot is ONLINE and connected successfully."
-        )
+    bot.send_message(
+        chat_id=CHAT_ID,
+        text="🚀 Quote Bot is ONLINE and running (1 quote every hour)."
     )
     print("Startup message sent")
 except Exception as e:
     print(f"Startup error: {e}")
+
+send_quote()  # first quote immediately
 
 scheduler.start()
