@@ -12,6 +12,7 @@ if not TOKEN:
 
 bot = Bot(token=TOKEN)
 
+# Load quotes
 def load_quotes():
     with open("quotes.json", "r", encoding="utf-8") as f:
         return json.load(f)
@@ -34,6 +35,7 @@ def get_quote():
         used = []
 
     available = [q for q in quotes if q not in used]
+
     quote = random.choice(available)
 
     used.append(quote)
@@ -44,11 +46,12 @@ def get_quote():
 def send_quote():
     try:
         quote = get_quote()
-        message = f"✨ Daily Inspiration\n\n{quote}"
+        message = f"✨ *Daily Inspiration*\n\n{quote}"
 
         bot.send_message(
             chat_id=CHAT_ID,
-            text=message
+            text=message,
+            parse_mode="Markdown"
         )
 
         print("Quote sent successfully")
@@ -56,25 +59,22 @@ def send_quote():
     except Exception as e:
         print(f"ERROR: {e}")
 
-# Scheduler
+# Scheduler (1 quote every hour)
 scheduler = BlockingScheduler()
-
-# 🔥 1 quote every hour (STARTS immediately after deploy)
-scheduler.add_job(send_quote, "interval", hours=1, next_run_time=None)
+scheduler.add_job(send_quote, "interval", hours=1)
 
 print("Bot is running...")
 
-# TEST MESSAGE ON STARTUP
+# Send immediately on startup
 try:
     bot.send_message(
         chat_id=CHAT_ID,
-        text="🚀 Bot is ONLINE"
+        text="🚀 Quote Bot is ONLINE and running (1 quote every hour)."
     )
     print("Startup message sent")
 except Exception as e:
     print(f"Startup error: {e}")
 
-# send first quote immediately
-send_quote()
+send_quote()  # first quote immediately
 
 scheduler.start()
