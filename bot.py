@@ -1,16 +1,15 @@
 import json
 import random
 import os
-from telegram import Bot
-from apscheduler.schedulers.blocking import BlockingScheduler
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes
+from apscheduler.schedulers.background import BackgroundScheduler
 
 TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = int(os.getenv("CHAT_ID"))
 
 if not TOKEN:
     raise ValueError("BOT_TOKEN not found")
-
-bot = Bot(token=TOKEN)
 
 # -------------------
 # LOAD QUOTES
@@ -29,9 +28,6 @@ def save_used(used):
     with open("used.json", "w", encoding="utf-8") as f:
         json.dump(used, f)
 
-# -------------------
-# QUOTE LOGIC
-# -------------------
 def get_quote():
     quotes = load_quotes()
     used = load_used()
@@ -49,10 +45,12 @@ def get_quote():
     return quote
 
 # -------------------
-# SEND MESSAGE (SYNC FIX)
+# TELEGRAM APP (CORRECT v20+)
 # -------------------
-def send_message(text):
-    bot.send_message(
+app = ApplicationBuilder().token(TOKEN).build()
+
+async def send_message(text: str):
+    await app.bot.send_message(
         chat_id=CHAT_ID,
         text=text,
         parse_mode="Markdown"
@@ -63,7 +61,9 @@ def send_quote():
         quote = get_quote()
         message = f"✨ *Daily Inspiration*\n\n{quote}"
 
-        send_message(message)
+        # safe call into async loop
+        import asyncio
+        asyncio.run(send_message(message))
 
         print("Quote sent successfully")
 
@@ -71,21 +71,27 @@ def send_quote():
         print(f"ERROR: {e}")
 
 # -------------------
-# SCHEDULER
+# SCHEDULER (IMPORTANT FIX)
 # -------------------
-scheduler = BlockingScheduler()
+scheduler = BackgroundScheduler()
 scheduler.add_job(send_quote, "interval", hours=1)
 
 print("Bot is running...")
 
 # Startup message
 try:
-    send_message("🚀 Quote Bot is ONLINE and running (1 quote every hour).")
+    import asyncio
+    asyncio.run(send_message("🚀 Quote Bot is ONLINE (1 quote every hour)"))
     print("Startup message sent")
 except Exception as e:
     print(f"Startup error: {e}")
 
-# First quote immediately
+# First run immediately
 send_quote()
 
 scheduler.start()
+
+# keep process alive
+import time
+while True:
+    time.sleep(60)
