@@ -1,7 +1,6 @@
 import json
 import random
 import os
-import asyncio
 from telegram import Bot
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -13,9 +12,9 @@ if not TOKEN:
 
 bot = Bot(token=TOKEN)
 
-# ----------------------------
-# Load quotes
-# ----------------------------
+# -------------------
+# LOAD QUOTES
+# -------------------
 def load_quotes():
     with open("quotes.json", "r", encoding="utf-8") as f:
         return json.load(f)
@@ -30,9 +29,9 @@ def save_used(used):
     with open("used.json", "w", encoding="utf-8") as f:
         json.dump(used, f)
 
-# ----------------------------
-# Quote logic
-# ----------------------------
+# -------------------
+# QUOTE LOGIC
+# -------------------
 def get_quote():
     quotes = load_quotes()
     used = load_used()
@@ -49,13 +48,13 @@ def get_quote():
 
     return quote
 
-# ----------------------------
-# Async Telegram sender (FIX)
-# ----------------------------
-async def send_message(message: str):
-    await bot.send_message(
+# -------------------
+# SEND MESSAGE (SYNC FIX)
+# -------------------
+def send_message(text):
+    bot.send_message(
         chat_id=CHAT_ID,
-        text=message,
+        text=text,
         parse_mode="Markdown"
     )
 
@@ -64,34 +63,29 @@ def send_quote():
         quote = get_quote()
         message = f"✨ *Daily Inspiration*\n\n{quote}"
 
-        asyncio.run(send_message(message))
+        send_message(message)
 
         print("Quote sent successfully")
 
     except Exception as e:
         print(f"ERROR: {e}")
 
-# ----------------------------
-# Scheduler
-# ----------------------------
+# -------------------
+# SCHEDULER
+# -------------------
 scheduler = BlockingScheduler()
 scheduler.add_job(send_quote, "interval", hours=1)
 
 print("Bot is running...")
 
-# ----------------------------
 # Startup message
-# ----------------------------
 try:
-    asyncio.run(
-        send_message("🚀 Quote Bot is ONLINE and running (1 quote every hour).")
-    )
+    send_message("🚀 Quote Bot is ONLINE and running (1 quote every hour).")
     print("Startup message sent")
 except Exception as e:
     print(f"Startup error: {e}")
 
-# First immediate quote
+# First quote immediately
 send_quote()
 
-# Start scheduler
 scheduler.start()
