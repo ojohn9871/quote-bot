@@ -1,9 +1,8 @@
 import json
 import random
 import os
-from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes
-from apscheduler.schedulers.background import BackgroundScheduler
+from telegram import Bot
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = int(os.getenv("CHAT_ID"))
@@ -11,9 +10,9 @@ CHAT_ID = int(os.getenv("CHAT_ID"))
 if not TOKEN:
     raise ValueError("BOT_TOKEN not found")
 
-# -------------------
-# LOAD QUOTES
-# -------------------
+bot = Bot(token=TOKEN)
+
+# ---------------- QUOTES ----------------
 def load_quotes():
     with open("quotes.json", "r", encoding="utf-8") as f:
         return json.load(f)
@@ -44,54 +43,31 @@ def get_quote():
 
     return quote
 
-# -------------------
-# TELEGRAM APP (CORRECT v20+)
-# -------------------
-app = ApplicationBuilder().token(TOKEN).build()
-
-async def send_message(text: str):
-    await app.bot.send_message(
-        chat_id=CHAT_ID,
-        text=text,
-        parse_mode="Markdown"
-    )
-
+# ---------------- SEND ----------------
 def send_quote():
     try:
         quote = get_quote()
-        message = f"✨ *Daily Inspiration*\n\n{quote}"
+        message = f"✨ Daily Inspiration\n\n{quote}"
 
-        # safe call into async loop
-        import asyncio
-        asyncio.run(send_message(message))
+        bot.send_message(chat_id=CHAT_ID, text=message)
 
         print("Quote sent successfully")
 
     except Exception as e:
-        print(f"ERROR: {e}")
+        print("ERROR:", e)
 
-# -------------------
-# SCHEDULER (IMPORTANT FIX)
-# -------------------
-scheduler = BackgroundScheduler()
+# ---------------- SCHEDULER ----------------
+scheduler = BlockingScheduler()
 scheduler.add_job(send_quote, "interval", hours=1)
 
 print("Bot is running...")
 
 # Startup message
 try:
-    import asyncio
-    asyncio.run(send_message("🚀 Quote Bot is ONLINE (1 quote every hour)"))
+    bot.send_message(chat_id=CHAT_ID, text="🚀 Bot is ONLINE (1 quote/hour)")
     print("Startup message sent")
 except Exception as e:
-    print(f"Startup error: {e}")
+    print("Startup error:", e)
 
-# First run immediately
 send_quote()
-
 scheduler.start()
-
-# keep process alive
-import time
-while True:
-    time.sleep(60)
