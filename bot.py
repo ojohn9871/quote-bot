@@ -84,7 +84,7 @@ print("Bot is running...")
 # ----------------------------
 try:
     asyncio.run(
-        send_message("🚀 Quote Bot is ONLINE and running (1 quote every hour).")
+        send_message("🚀 Quote Bot is ONLINE and running.")
     )
     print("Startup message sent")
 except Exception as e:
