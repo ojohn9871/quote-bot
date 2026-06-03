@@ -8,7 +8,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = int(os.getenv("CHAT_ID"))
 
 if not TOKEN:
-    raise ValueError("BOT_TOKEN not found")
+    raise ValueError("BOT_TOKEN missing")
 
 bot = Bot(token=TOKEN)
 
@@ -56,18 +56,19 @@ def send_quote():
     except Exception as e:
         print("ERROR:", e)
 
-# ---------------- SCHEDULER ----------------
+# ---------------- START ----------------
 scheduler = BlockingScheduler()
 scheduler.add_job(send_quote, "interval", hours=1)
 
 print("Bot is running...")
 
-# Startup message
+# test message
 try:
-    bot.send_message(chat_id=CHAT_ID, text="🚀 Bot is ONLINE (1 quote/hour)")
+    bot.send_message(chat_id=CHAT_ID, text="🚀 Bot is ONLINE and working")
     print("Startup message sent")
 except Exception as e:
     print("Startup error:", e)
 
 send_quote()
+
 scheduler.start()
